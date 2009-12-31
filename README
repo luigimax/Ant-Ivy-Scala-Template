@@ -1,0 +1,32 @@
+
+Author: Luke Harvey
+
+Intro:
+Something I hobbled together by staring at incomplete examples. In my opinion there is not enough good
+examples for Scala build environments yet. Here is the result. Took me 15 hours but thats ok. now I have a
+base for other projects I want to create. 
+(at some point ill get arround to porting the maven archetype default for the lift framework)
+
+Requirements:
+ant 1.6.2+
+jdk 1.4+
+
+Ivy will be downloaded automaticly so it does not need to be installed
+This template can easly be imported into NetBeans (the nbproject folder)
+Run project: 
+	ant run
+
+build jar: 
+	ant jar
+
+run the ScalaTest tests: 
+	ant test
+
+Uses Ivy 2.1.0
+
+The only required files in the project:
+build.xml
+ivy.xml
+ivysettings.xml
+
+all other folders will be generated when build.xml is run

@@ -1,0 +1,185 @@
+<project name="unFuse" default="build" xmlns:ivy="antlib:org.apache.ivy.ant">
+<!--
+===============================================================================
+The Properties section - edit these values if you are unhappy with
+the project layout
+===============================================================================
+-->
+        <property name="ivy.install.version" value="2.1.0" />
+	<property name="ivy.jar.dir" value="${basedir}/ivy" />
+	<property name="ivy.jar.file" value="${ivy.jar.dir}/ivy.jar" />
+	
+	<property name="build.dir" value="build" />
+        <property name="src.dir" value="src/main" />
+	<property name="scala.src.dir" value="src/main/scala" />
+	<property name="lib.dir" value="lib" />
+        <property name="test.dir" value="test" />
+        <property name="build.jar" value="unFuse.jar" />
+       
+<!--
+===============================================================================
+The ivy section - downloads and configures everything you need to run
+the project
+******
+note:
+to add more repositories add them to ivysettings.xml
+to add more dependancyies add them to ivy.xml
+******
+===============================================================================
+-->
+	<target name="download-ivy" unless="skip.download">
+		<mkdir dir="${ivy.jar.dir}"/>
+		<!-- download Ivy from web site so that it can be used even without any special installation -->
+		<echo message="installing ivy..."/>
+		<get src="http://repo1.maven.org/maven2/org/apache/ivy/ivy/${ivy.install.version}/ivy-${ivy.install.version}.jar"
+			 dest="${ivy.jar.file}" usetimestamp="true"/>
+	</target>
+	
+	<target name="install-ivy" depends="download-ivy" description="--> install ivy">
+    	<!-- try to load ivy here from local ivy dir, in case the user has not already dropped
+    	      it into ant's lib dir (note that the latter copy will always take precedence).
+    	      We will not fail as long as local lib dir exists (it may be empty) and
+    	      ivy is in at least one of ant's lib dir or the local lib dir. -->
+            <path id="ivy.lib.path">
+                <fileset dir="${ivy.jar.dir}" includes="*.jar"/>
+            </path>
+            <taskdef resource="org/apache/ivy/ant/antlib.xml"
+                    uri="antlib:org.apache.ivy.ant" classpathref="ivy.lib.path"/>
+        </target>
+<!--
+===============================================================================
+the init function. Specifys the retreive location and
+specifyes where the libraries are loaded from
+Also creates the source directories if they dont already exist
+===============================================================================
+-->
+	<target name="init" depends="install-ivy">
+            <mkdir dir="${lib.dir}"/>
+            <mkdir dir="${scala.src.dir}"/>
+            <mkdir dir="${test.dir}"/>
+            <ivy:configure file="ivysettings.xml" />
+            <ivy:retrieve pattern="${lib.dir}/[type]/[artifact].[ext]"/>
+	    <property name="scala-library.jar" value="${lib.dir}/jar/scala-library.jar"/>
+		<path id="build.classpath">
+			<fileset dir="lib">
+				<include name="**/*.jar"/>
+			</fileset>
+			
+			<pathelement location="${build.dir}"   />
+		</path>
+    
+		<taskdef resource="scala/tools/ant/antlib.xml">
+			<classpath>
+				<pathelement location="${lib.dir}/jar/scala-compiler.jar"   />
+				<pathelement location="${scala-library.jar}"   />
+			</classpath>
+		</taskdef>
+	</target>
+<!--
+===============================================================================
+The Standard build Section - there are production buids. it does not build
+the test directory (if you have been testing I sugest you run clean)
+*****
+The identical javac entries are for a java/scala project
+each compiler will only recognize already compiled classes.
+result if you have an interconnected project, it will fail to
+build atleast once until the other language compiles.
+The identical calls are to allow for a successfull build.
+*****
+===============================================================================
+-->
+	<target name="build" depends="init">
+                <mkdir dir="${build.dir}"   />
+                <javac srcdir="${scala.src.dir}" destdir="${build.dir}" classpathref="build.classpath">
+                        <include name="**/*.java"   />
+                </javac>
+		<scalac srcdir="${scala.src.dir}" destdir="${build.dir}" classpathref="build.classpath">
+			<include name="**/*.scala"   />
+		</scalac>
+                <javac srcdir="${scala.src.dir}" destdir="${build.dir}" classpathref="build.classpath">
+                        <include name="**/*.java"   />
+                </javac>
+
+	</target>
+        <target name="jar" depends="build" description="o Creates a JAR file for this package">
+            <manifestclasspath property="dist.manifest.classpath" jarfile="${build.dir}/${build.jar}">
+                <classpath refid="build.classpath" />
+            </manifestclasspath>
+
+            <jar destfile="${build.dir}/${build.jar}"
+                excludes="**/package.html" basedir="${build.dir}" includes="**/*.class" >
+                <fileset dir="${src.dir}">
+                    <include name="**/*"/>
+                </fileset>
+                <fileset dir="${src.dir}" includes="*.*" />
+      <!--
+      uncomment this if you want all lib jars be copied into dest jar
+      (wont do much - you still need to run it with java -jar somejar.jar to 
+      run anyway
+      <zipfileset dir="${lib.dir}">
+          <include name="**/*.jar"/>
+      </zipfileset>
+      -->
+                <manifest>
+                    <attribute name="Main-Class" value="ldc.unfuse.Main"/>
+                    <attribute name="Class-Path" value="${dist.manifest.classpath}"/>
+                </manifest>
+            </jar>
+        </target>
+<!--
+===============================================================================
+The test Section - these are test targest Using ScalaTest:: http://www.scalatest.org/
+the reporter tags/calls in scalatest are what reports on the test.
+dont like one, just delete it. I think the graphic type is the best.
+Add more <suite> calls for each test class you want to run
+===============================================================================
+-->
+        <target name="testbuild" depends="build">
+            <javac srcdir="${test.dir}" destdir="${build.dir}" classpathref="build.classpath">
+                        <include name="**/*.java" />
+             </javac>
+             <scalac srcdir="${test.dir}" destdir="${build.dir}" classpathref="build.classpath">
+			<include name="**/*.scala" />
+            </scalac>
+        </target>
+         <target name="test" depends="testbuild">
+            <taskdef name="scalatest" classname="org.scalatest.tools.ScalaTestAntTask">
+                <classpath refid="build.classpath"/>
+            </taskdef>
+
+            <scalatest parallel="true">
+                <reporter type="stdout" />
+                <reporter type="file" filename="${build.dir}/test.out"/>
+                <reporter type="graphic" />
+
+                <suite classname="ldc.unfuse.GrepTest" />
+            </scalatest>
+
+         </target>
+
+<!--
+===============================================================================
+Cleaning section - run after testing to not include test classes into
+the final project (just takes space)
+===============================================================================
+-->
+        <target name="clean" description="o Cleans up the build artifacts">
+            <delete dir="${build.dir}" failonerror="false" />
+            <delete file="unFuse.jar" failonerror="false" />
+        </target>
+<!--
+===============================================================================
+The test Section - use this the run the project without makeing a jar
+===============================================================================
+-->
+        <target name="run" depends="build">
+        <java classname="scala.tools.nsc.MainGenericRunner" fork="true">
+          <classpath>
+            <path refid="build.classpath"/>
+          </classpath>
+
+          <arg line="ldc.unfuse.Main"/>
+        </java>
+      </target>
+
+</project>

@@ -1,0 +1,28 @@
+<!--
+===============================================================================
+Add maven or ivy dependancies here
+for Maven:
+<dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.4</version>
+      <scope>test</scope>
+</dependency>
+equates to:
+<dependency org="junit" name="junit" rev="4.4"/>
+meaning:
+Ivy = Maven
+org = groupId
+name = artifactId
+rev = version
+===============================================================================
+-->
+<ivy-module version="2.0">
+    <info organisation="ldc.unFuse" module="unFuse-core"/>
+    <dependencies>
+        <dependency org="org.scala-lang" name="scala-library" rev="2.7.7"/>
+        <dependency org="org.scala-lang" name="scala-compiler" rev="2.7.7"/>
+		<dependency org="org.scalatest" name="scalatest" rev="1.0"/>
+         <!-- other dependecies -->
+    </dependencies>
+</ivy-module>

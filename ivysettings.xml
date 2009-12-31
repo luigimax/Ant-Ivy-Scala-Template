@@ -1,0 +1,30 @@
+<!--
+===============================================================================
+Add maven or ivy repositories here
+for Maven:
+<repository>
+      <id>scala-tools.org</id>
+      <name>Scala-Tools Maven2 Repository</name>
+      <url>http://scala-tools.org/repo-releases</url>
+</repository>
+equates to:
+<ibiblio name="Scala-Tools Maven2 Repository" root="http://scala-tools.org/repo-releases" m2compatible="true"/>
+meaning:
+Ivy = Maven
+    = id
+name = name
+root = url
+
+and m2compatible="true" activates Maven2 compatibility mode
+===============================================================================
+-->
+<ivysettings>
+  <conf defaultResolver="chained"/>
+  <resolvers>
+    <chain name="chained">		
+      <ibiblio name="java.net2" root="http://download.java.net/maven/2/" m2compatible="true"/>
+	  <ibiblio name="Scala-Tools Maven2 Repository" root="http://scala-tools.org/repo-releases" m2compatible="true"/>
+      <ibiblio name="ibiblio"/>
+    </chain>
+  </resolvers>
+</ivysettings>
